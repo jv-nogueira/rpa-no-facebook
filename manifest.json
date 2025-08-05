@@ -1,0 +1,10 @@
+{
+  "name": "Removedor de grupos do Facebook",
+  "description": "",
+  "manifest_version": 3,
+  "version": "1.0",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["activeTab", "scripting"]
+}
