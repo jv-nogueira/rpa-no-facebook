@@ -23,12 +23,12 @@ function start() {
       const permitidosUsername = new Set(text.split(/\r?\n/).map(line => line.trim()));
       grupo.scrollIntoView()
       if(!permitidosUsername.has(link)){
-        setTimeout(() => openOptions(i),5000)
+        setTimeout(() => openOptions(i),2500)
         console.log("Esse grupo esta nao esta lista")
       }else{
         console.log("Esse grupo esta na lista para nao ser removido");
         i++;
-        setTimeout(linksPermitidos,5000);
+        setTimeout(linksPermitidos,2500);
       }
     }
 
@@ -39,7 +39,7 @@ function start() {
             console.log("Cliquei em abrir opções");
             setTimeout(optionExit,5000);
           } else {
-            setTimeout(() => openOptions(i), 5000);
+            setTimeout(() => openOptions(i), 2500);
             console.log("Aguardando openOptions");
           }
         }
@@ -50,9 +50,9 @@ function start() {
           if (opcao) {
             setTimeout(() => opcao.click(),2000)
             console.log("Cliquei em 'Sair'");
-            setTimeout(uncheckAddAgain,5000);
+            setTimeout(uncheckAddAgain,2500);
           } else {
-            setTimeout(optionExit, 5000);
+            setTimeout(optionExit, 2500);
             console.log("Aguardando optionExit");
           }
         }
@@ -65,9 +65,9 @@ function start() {
               setTimeout(() => input.click(),2000);
               console.log("Desmarquei 'Adicionar novamente'");
             }
-            setTimeout(clickLeaveGroup,5000);
+            setTimeout(clickLeaveGroup,2500);
           } else {
-            setTimeout(uncheckAddAgain, 5000);
+            setTimeout(uncheckAddAgain, 2500);
             console.log("Aguardando uncheckAddAgain");
           }
         }
@@ -79,13 +79,13 @@ function start() {
             if (btn) {
               setTimeout(() => btn.click(),2000)
               console.log("Cliquei em 'Sair do grupo'");
-              setTimeout(clickReportLeave,5000);
+              setTimeout(clickReportLeave,2500);
             } else {
-              setTimeout(clickLeaveGroup, 5000);
+              setTimeout(clickLeaveGroup, 2500);
               console.log("Aguardando clickLeaveGroup");
             }
           } else {
-            setTimeout(clickLeaveGroup, 5000);
+            setTimeout(clickLeaveGroup, 2500);
             console.log("Aguardando dialog em clickLeaveGroup");
           }
         }
@@ -100,13 +100,13 @@ function start() {
               setTimeout(linksPermitidos,5000)
               console.log("Cliquei em 'Sair' na denúncia");
             } else {
-              setTimeout(clickReportLeave, 5000);
+              setTimeout(clickReportLeave, 2500);
               console.log("Aguardando botão em clickReportLeave");
             }
           } else {
             // setTimeout(clickReportLeave, 5000);
             i++
-            setTimeout(linksPermitidos,5000)
+            setTimeout(linksPermitidos,2500)
             console.log("Aguardando dialogs em clickReportLeave");
           }
         }
