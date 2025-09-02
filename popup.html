@@ -1,3 +1,35 @@
-<button id="remover">Remover grupos</button>
-<button id="salvar">Salvar grupos</button>
-<script src="popup.js"></script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      width: 200px;
+    }
+    h1 {
+      font-size: 16px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #salvar { background: #4CAF50; color: white; }
+    #remover { background: #E53935; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Gerenciador de Grupos</h1>
+  <button id="salvar">Salvar grupos</button>
+  <button id="remover">Remover grupos</button>
+  <script src="popup.js"></script>
+</body>
+</html>
