@@ -6,30 +6,34 @@
     body {
       font-family: Arial, sans-serif;
       padding: 10px;
-      width: 200px;
+      width: 220px;
     }
     h1 {
       font-size: 16px;
       text-align: center;
       margin-bottom: 15px;
     }
-    button {
+    button, input {
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       margin-bottom: 10px;
-      border: none;
       border-radius: 5px;
       font-size: 14px;
-      cursor: pointer;
     }
-    #salvar { background: #4CAF50; color: white; }
-    #remover { background: #E53935; color: white; }
+    #salvar { background: #4CAF50; color: white; border: none; }
+    #remover { background: #E53935; color: white; border: none; }
   </style>
 </head>
 <body>
   <h1>Gerenciador de Grupos</h1>
+  
+  <!-- Botões -->
   <button id="salvar">Salvar grupos</button>
   <button id="remover">Remover grupos</button>
+
+  <!-- Upload de arquivo -->
+  <input type="file" id="arquivo" accept=".txt">
+
   <script src="popup.js"></script>
 </body>
 </html>

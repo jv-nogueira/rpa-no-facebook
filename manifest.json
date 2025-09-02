@@ -7,10 +7,7 @@
     "default_popup": "popup.html"
   },
   "permissions": ["activeTab", "scripting"],
-  "web_accessible_resources": [
-    {
-      "resources": ["lista-grupos.txt"],
-      "matches": ["<all_urls>"]
-    }
+    "host_permissions": [
+    "https://www.facebook.com/*"
   ]
 }
