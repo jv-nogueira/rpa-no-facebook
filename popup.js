@@ -2,34 +2,48 @@ let conteudoArquivo = "";
 
 // Upload de arquivo
 const input = document.getElementById("arquivo");
+const btnRemoverArquivo = document.getElementById("removerArquivo");
+
 input.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (e) => { conteudoArquivo = e.target.result; console.log("Arquivo carregado:", conteudoArquivo); };
+  reader.onload = (e) => {
+    conteudoArquivo = e.target.result;
+    console.log("Arquivo carregado:", conteudoArquivo);
+    btnRemoverArquivo.style.display = "block"; // mostra botão de remover arquivo
+  };
   reader.readAsText(file);
 });
 
-// Função para alternar Start/Stop e ocultar outros elementos
+// Remover arquivo carregado
+btnRemoverArquivo.addEventListener("click", () => {
+  conteudoArquivo = "";
+  input.value = "";
+  btnRemoverArquivo.style.display = "none";
+  console.log("Arquivo removido");
+});
+
+// Alterna Start/Stop e oculta elementos
 function toggleButton(btn) {
   const otherBtn = btn.id === "remover" ? document.getElementById("salvar") : document.getElementById("remover");
   const uploadInput = document.getElementById("arquivo");
+  const uploadRemoveBtn = document.getElementById("removerArquivo");
 
   if (btn.textContent.includes("Stop")) {
-    // Voltando ao estado inicial
     btn.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
     otherBtn.style.display = "block";
     uploadInput.style.display = "block";
+    if (conteudoArquivo) uploadRemoveBtn.style.display = "block";
   } else {
-    // Iniciando execução
     btn.textContent = "Stop";
     otherBtn.style.display = "none";
     uploadInput.style.display = "none";
+    uploadRemoveBtn.style.display = "none";
   }
 }
 
-
-// BOTÃO REMOVER
+// ---------- BOTÃO REMOVER ----------
 document.getElementById("remover").addEventListener("click", async function () {
   const btn = this;
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -44,7 +58,7 @@ document.getElementById("remover").addEventListener("click", async function () {
   chrome.scripting.executeScript({ target: { tabId: tab.id }, func: startRemover, args: [conteudoArquivo || null] });
 });
 
-// BOTÃO SALVAR
+// ---------- BOTÃO SALVAR ----------
 document.getElementById("salvar").addEventListener("click", async function () {
   const btn = this;
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

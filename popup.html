@@ -7,7 +7,8 @@
   <style>
     body { width: 240px; padding: 10px; font-family: Arial, sans-serif; }
     .btn-block { width: 100%; margin-bottom: 10px; }
-    input[type="file"] { margin-bottom: 10px; }
+    #arquivo { font-size: 12px; padding: 2px; margin-bottom: 5px; }
+    #removerArquivo { display: none; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -16,7 +17,8 @@
   <button id="remover" class="btn btn-danger btn-block">Remover grupos</button>
   <button id="salvar" class="btn btn-success btn-block">Salvar grupos</button>
 
-  <input type="file" id="arquivo" accept=".txt" class="form-control mb-2">
+  <input type="file" id="arquivo" accept=".txt" class="form-control mb-1">
+  <button id="removerArquivo" class="btn btn-secondary btn-block btn-sm">Remover arquivo</button>
 
   <script src="popup.js"></script>
 </body>
