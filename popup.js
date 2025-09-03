@@ -29,17 +29,22 @@ function toggleButton(btn) {
   const otherBtn = btn.id === "remover" ? document.getElementById("salvar") : document.getElementById("remover");
   const uploadInput = document.getElementById("arquivo");
   const uploadRemoveBtn = document.getElementById("removerArquivo");
+  const mensagemUpload = document.getElementById("mensagemUpload");
 
   if (btn.textContent.includes("Stop")) {
+    // Voltando ao estado inicial
     btn.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
     otherBtn.style.display = "block";
     uploadInput.style.display = "block";
+    mensagemUpload.style.display = "block";
     if (conteudoArquivo) uploadRemoveBtn.style.display = "block";
   } else {
+    // Iniciando execução
     btn.textContent = "Stop";
     otherBtn.style.display = "none";
     uploadInput.style.display = "none";
     uploadRemoveBtn.style.display = "none";
+    mensagemUpload.style.display = "none"; // oculta a mensagem de upload
   }
 }
 
@@ -52,6 +57,11 @@ document.getElementById("remover").addEventListener("click", async function () {
     chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.stopExecution = true; } });
     toggleButton(btn);
     return;
+  }
+
+  if (!conteudoArquivo) {
+    const confirmado = confirm("Nenhum arquivo foi carregado. Deseja remover todos os grupos?");
+    if (!confirmado) return;
   }
 
   toggleButton(btn);
