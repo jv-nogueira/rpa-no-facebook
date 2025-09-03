@@ -1,13 +1,11 @@
 {
   "name": "Removedor de grupos do Facebook",
-  "description": "",
+  "description": "Gerencia grupos do Facebook com upload de arquivo para proteção de alguns grupos.",
   "manifest_version": 3,
   "version": "1.0",
   "action": {
     "default_popup": "popup.html"
   },
-  "permissions": ["activeTab", "scripting"],
-  "host_permissions": [
-    "https://www.facebook.com/*"
-  ]
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://www.facebook.com/*"]
 }

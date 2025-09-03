@@ -1,9 +1,17 @@
 let conteudoArquivo = "";
 
+// Recupera estado do popup (se algum script está rodando)
+chrome.storage.local.get(["executando", "botaoAtivo"], (data) => {
+  const btnId = data.botaoAtivo || null;
+  if (data.executando && btnId) {
+    const btn = document.getElementById(btnId);
+    if (btn) toggleButton(btn, true);
+  }
+});
+
 // Upload de arquivo
 const input = document.getElementById("arquivo");
 const btnRemoverArquivo = document.getElementById("removerArquivo");
-
 input.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -11,7 +19,7 @@ input.addEventListener("change", (event) => {
   reader.onload = (e) => {
     conteudoArquivo = e.target.result;
     console.log("Arquivo carregado:", conteudoArquivo);
-    btnRemoverArquivo.style.display = "block"; // mostra botão de remover arquivo
+    btnRemoverArquivo.style.display = "block";
   };
   reader.readAsText(file);
 });
@@ -25,32 +33,35 @@ btnRemoverArquivo.addEventListener("click", () => {
 });
 
 // Alterna Start/Stop e oculta elementos
-function toggleButton(btn) {
+function toggleButton(btn, inicial=false) {
   const otherBtn = btn.id === "remover" ? document.getElementById("salvar") : document.getElementById("remover");
   const uploadInput = document.getElementById("arquivo");
   const uploadRemoveBtn = document.getElementById("removerArquivo");
   const mensagemUpload = document.getElementById("mensagemUpload");
 
-  if (btn.textContent.includes("Stop")) {
+  if (!inicial && btn.textContent.includes("Stop")) {
     // Voltando ao estado inicial
     btn.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
     otherBtn.style.display = "block";
     uploadInput.style.display = "block";
     mensagemUpload.style.display = "block";
     if (conteudoArquivo) uploadRemoveBtn.style.display = "block";
+
+    chrome.storage.local.set({executando: false, botaoAtivo: null});
   } else {
     // Iniciando execução
     btn.textContent = "Stop";
     otherBtn.style.display = "none";
     uploadInput.style.display = "none";
     uploadRemoveBtn.style.display = "none";
-    mensagemUpload.style.display = "none"; // oculta a mensagem de upload
+    mensagemUpload.style.display = "none";
+
+    chrome.storage.local.set({executando: true, botaoAtivo: btn.id});
   }
 }
 
-// ---------- BOTÃO REMOVER ----------
-document.getElementById("remover").addEventListener("click", async function () {
-  const btn = this;
+// Função genérica para lidar com clique de botões
+async function handleClick(btn, func, args=[]) {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
   if (btn.textContent.includes("Stop")) {
@@ -59,28 +70,22 @@ document.getElementById("remover").addEventListener("click", async function () {
     return;
   }
 
-  if (!conteudoArquivo) {
+  if (btn.id === "remover" && !conteudoArquivo) {
     const confirmado = confirm("Nenhum arquivo foi carregado. Deseja remover todos os grupos?");
     if (!confirmado) return;
   }
 
   toggleButton(btn);
-  chrome.scripting.executeScript({ target: { tabId: tab.id }, func: startRemover, args: [conteudoArquivo || null] });
+  chrome.scripting.executeScript({ target: { tabId: tab.id }, func, args });
+}
+
+// ---------- EVENTOS BOTÕES ----------
+document.getElementById("remover").addEventListener("click", function() {
+  handleClick(this, startRemover, [conteudoArquivo || null]);
 });
 
-// ---------- BOTÃO SALVAR ----------
-document.getElementById("salvar").addEventListener("click", async function () {
-  const btn = this;
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-  if (btn.textContent.includes("Stop")) {
-    chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.stopExecution = true; } });
-    toggleButton(btn);
-    return;
-  }
-
-  toggleButton(btn);
-  chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extrairDadosLista });
+document.getElementById("salvar").addEventListener("click", function() {
+  handleClick(this, extrairDadosLista);
 });
 
 // ---------- SCRIPT DE REMOVER ----------
