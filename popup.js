@@ -1,206 +1,169 @@
 let conteudoArquivo = "";
 
-// Captura o arquivo quando o usuário seleciona
+// Upload de arquivo
 const input = document.getElementById("arquivo");
 input.addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
-  reader.onload = (e) => {
-    conteudoArquivo = e.target.result;
-    console.log("Arquivo carregado no popup:", conteudoArquivo);
-    // alert removido
-  };
+  reader.onload = (e) => { conteudoArquivo = e.target.result; console.log("Arquivo carregado:", conteudoArquivo); };
   reader.readAsText(file);
 });
 
-// ---------- BOTÃO REMOVER ----------
-document.getElementById("remover").addEventListener("click", async () => {
+// Função para alternar Start/Stop e ocultar outros elementos
+function toggleButton(btn) {
+  const otherBtn = btn.id === "remover" ? document.getElementById("salvar") : document.getElementById("remover");
+  const uploadInput = document.getElementById("arquivo");
+
+  if (btn.textContent.includes("Stop")) {
+    // Voltando ao estado inicial
+    btn.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
+    otherBtn.style.display = "block";
+    uploadInput.style.display = "block";
+  } else {
+    // Iniciando execução
+    btn.textContent = "Stop";
+    otherBtn.style.display = "none";
+    uploadInput.style.display = "none";
+  }
+}
+
+
+// BOTÃO REMOVER
+document.getElementById("remover").addEventListener("click", async function () {
+  const btn = this;
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  if (conteudoArquivo) {
-    // Se houve upload, executa direto
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: startRemover,
-      args: [conteudoArquivo]
-    });
-  } else {
-    // Se não houve upload, pede confirmação
-    const confirmado = confirm("Tem certeza que deseja remover todos os grupos?");
-    if (confirmado) {
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: startRemover
-      });
-    } else {
-      console.log("Remoção cancelada pelo usuário");
-    }
+  if (btn.textContent.includes("Stop")) {
+    chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.stopExecution = true; } });
+    toggleButton(btn);
+    return;
   }
+
+  toggleButton(btn);
+  chrome.scripting.executeScript({ target: { tabId: tab.id }, func: startRemover, args: [conteudoArquivo || null] });
 });
 
-// ---------- BOTÃO SALVAR ----------
-document.getElementById("salvar").addEventListener("click", async () => {
+// BOTÃO SALVAR
+document.getElementById("salvar").addEventListener("click", async function () {
+  const btn = this;
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    function: extrairDadosLista
-  });
+  if (btn.textContent.includes("Stop")) {
+    chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => { window.stopExecution = true; } });
+    toggleButton(btn);
+    return;
+  }
+
+  toggleButton(btn);
+  chrome.scripting.executeScript({ target: { tabId: tab.id }, func: extrairDadosLista });
 });
 
 // ---------- SCRIPT DE REMOVER ----------
 function startRemover(listaTexto) {
-  var i = 0;
-  let permitidosUsername = new Set();
-
-  if (listaTexto) {
-    permitidosUsername = new Set(
-      listaTexto.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
-    );
-    console.log("Usando conteúdo do arquivo upload:", listaTexto);
-  } else {
-    console.log("Nenhum arquivo carregado, removendo todos os grupos");
-  }
-
-  linksPermitidos();
+  window.stopExecution = false;
+  let i = 0;
+  let permitidos = listaTexto ? new Set(listaTexto.split(/\r?\n/).map(l => l.trim()).filter(Boolean)) : new Set();
 
   function linksPermitidos() {
-    const grupo = document.querySelectorAll("[role='listitem']")[i];
-    if (!grupo) return console.log("Nenhum grupo encontrado ou lista finalizada");
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
+    const grupos = document.querySelectorAll("[role='listitem']");
+    if (i >= grupos.length) return console.log("Todos os grupos processados");
 
-    const link = grupo.querySelector("a")?.getAttribute("href");
+    const grupo = grupos[i];
+    const link = grupo.querySelector("a")?.href;
     const title = grupo.querySelectorAll("a")[1]?.textContent?.trim() || "";
     grupo.scrollIntoView();
 
-    if (permitidosUsername.size === 0 || !permitidosUsername.has(link)) {
+    if (permitidos.size === 0 || !permitidos.has(link)) {
       setTimeout(() => openOptions(i), 2500);
-      console.log("Esse grupo", title,"será removido:", link);
+      console.log("Removendo grupo:", title, link);
     } else {
-      console.log("Esse grupo", title,"está na lista de permitidos:", link);
+      console.log("Permitido:", title, link);
       i++;
       setTimeout(linksPermitidos, 2500);
     }
   }
 
-  function openOptions(i) {
-    const item = document.querySelectorAll("[role='listitem']")[i];
+  function openOptions(idx) {
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
+    const item = document.querySelectorAll("[role='listitem']")[idx];
     if (item && item.querySelector("i")) {
-      setTimeout(() => item.querySelector("i").click(), 2000);
-      console.log("Cliquei em abrir opções");
-      setTimeout(optionExit, 5000);
-    } else {
-      setTimeout(() => openOptions(i), 2500);
-      console.log("Aguardando openOptions");
-    }
+      item.querySelector("i").click();
+      setTimeout(optionExit, 2000);
+    } else setTimeout(() => openOptions(idx), 1000);
   }
 
   function optionExit() {
-    const opcao = Array.from(document.querySelectorAll("[role='menuitem']"))
-      .find(item => item.innerText.trim() === "Sair do grupo");
-    if (opcao) {
-      setTimeout(() => opcao.click(), 2000);
-      console.log("Cliquei em 'Sair'");
-      setTimeout(uncheckAddAgain, 2500);
-    } else {
-      setTimeout(optionExit, 2500);
-      console.log("Aguardando optionExit");
-    }
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
+    const opcao = Array.from(document.querySelectorAll("[role='menuitem']")).find(x => x.innerText.trim() === "Sair do grupo");
+    if (opcao) { opcao.click(); setTimeout(uncheckAddAgain, 2000); } 
+    else setTimeout(optionExit, 1000);
   }
 
   function uncheckAddAgain() {
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const dialog = document.querySelector("[role='dialog']");
     if (dialog) {
       const input = dialog.querySelector("input");
-      if (input && input.getAttribute("aria-checked") === "false") {
-        setTimeout(() => input.click(), 2000);
-        console.log("Desmarquei 'Adicionar novamente'");
-      }
-      setTimeout(clickLeaveGroup, 2500);
-    } else {
-      setTimeout(uncheckAddAgain, 2500);
-      console.log("Aguardando uncheckAddAgain");
-    }
+      if (input && input.getAttribute("aria-checked") === "false") input.click();
+      setTimeout(clickLeaveGroup, 1000);
+    } else setTimeout(uncheckAddAgain, 1000);
   }
 
   function clickLeaveGroup() {
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const dialog = document.querySelector("[role='dialog']");
     if (dialog) {
       const btn = dialog.querySelectorAll("[role='button']")[2];
-      if (btn) {
-        setTimeout(() => btn.click(), 2000);
-        console.log("Cliquei em 'Sair do grupo'");
-        setTimeout(clickReportLeave, 2500);
-      } else {
-        setTimeout(clickLeaveGroup, 2500);
-        console.log("Aguardando clickLeaveGroup");
-      }
-    } else {
-      setTimeout(clickLeaveGroup, 2500);
-      console.log("Aguardando dialog em clickLeaveGroup");
-    }
+      if (btn) { btn.click(); setTimeout(clickReportLeave, 1500); }
+      else setTimeout(clickLeaveGroup, 1000);
+    } else setTimeout(clickLeaveGroup, 1000);
   }
 
   function clickReportLeave() {
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const dialogs = document.querySelectorAll("[role='dialog']");
     if (dialogs.length > 1) {
       const btn = dialogs[1].querySelector("[role='button']");
-      if (btn) {
-        setTimeout(() => btn.click(), 2000);
-        i++;
-        setTimeout(linksPermitidos, 5000);
-        console.log("Cliquei em 'Sair' na denúncia");
-      } else {
-        setTimeout(clickReportLeave, 2500);
-        console.log("Aguardando botão em clickReportLeave");
-      }
-    } else {
-      i++;
-      setTimeout(linksPermitidos, 2500);
-      console.log("Aguardando dialogs em clickReportLeave");
-    }
+      if (btn) { btn.click(); i++; setTimeout(linksPermitidos, 1500); }
+      else setTimeout(clickReportLeave, 1000);
+    } else { i++; setTimeout(linksPermitidos, 1000); }
   }
+
+  linksPermitidos();
 }
 
 // ---------- SCRIPT DE SALVAR ----------
 function extrairDadosLista() {
+  window.stopExecution = false;
   let i = 0;
   let resultado = "";
 
-  processarItem();
-
   function processarItem() {
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const lista = document.querySelectorAll("[role='listitem']");
-    console.log("Total:", lista.length, "Index:", i);
+    if (i >= lista.length) return downloadTxtFile(resultado);
 
-    if (lista[i] !== undefined) {
-      const link = lista[i].querySelector("a")?.getAttribute("href") || "";
-      const titulo = lista[i].querySelectorAll("a")[1]?.textContent?.trim() || "";
+    const link = lista[i].querySelector("a")?.href || "";
+    const titulo = lista[i].querySelectorAll("a")[1]?.textContent?.trim() || "";
+    resultado += `${i}\t${titulo}\t${link}\n`;
+    lista[i].scrollIntoView();
 
-      resultado += `${i}\t${titulo}\t${link}\n`;
-      lista[i].scrollIntoView();
-
-      if (i < lista.length - 3) {
-        i++;
-        setTimeout(processarItem, 500);
-      } else {
-        i++;
-        setTimeout(processarItem, 1000);
-      }
-    } else {
-      console.log("Download iniciado");
-      downloadTxtFile(resultado);
-    }
+    i++;
+    setTimeout(processarItem, 500);
   }
 
   function downloadTxtFile(content) {
-    const blob = new Blob([content], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "lista_resultado.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const blob = new Blob([content], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "lista_resultado.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log("Download concluído");
   }
+
+  processarItem();
 }
