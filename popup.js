@@ -9,6 +9,17 @@ chrome.storage.local.get(["executando", "botaoAtivo"], (data) => {
   }
 });
 
+// Verifica a URL ao abrir a extensão
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  const tab = tabs[0];
+  if (!tab.url.includes("facebook.com/groups/joins")) {
+    const confirmar = confirm("Você não está na página de grupos do Facebook.\nDeseja ser redirecionado para lá?");
+    if (confirmar) {
+      chrome.tabs.update(tab.id, { url: "https://www.facebook.com/groups/joins" });
+    }
+  }
+});
+
 // Upload de arquivo
 const input = document.getElementById("arquivo");
 const btnRemoverArquivo = document.getElementById("removerArquivo");
