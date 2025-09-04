@@ -58,7 +58,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
 });
 
 
-
 // Upload de arquivo
 const input = document.getElementById("arquivo");
 const btnRemoverArquivo = document.getElementById("removerArquivo");
