@@ -38,12 +38,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     avisoContainer.style.padding = "20px";
 
     let avisoTexto = document.createElement("p");
-    avisoTexto.textContent = "O script só funciona nesta página de grupos do Facebook.";
+    avisoTexto.textContent = "Clique abaixo para ser redirecionado para a página correta.";
     avisoTexto.style.marginBottom = "15px";
     avisoContainer.appendChild(avisoTexto);
 
     let btnIrParaUrl = document.createElement("button");
-    btnIrParaUrl.textContent = "Ir para a página de grupos";
+    btnIrParaUrl.textContent = "Ir para os grupos";
     btnIrParaUrl.className = "btn btn-primary btn-block";
     btnIrParaUrl.addEventListener("click", () => {
       chrome.tabs.update(tab.id, { url: urlCorreta }, () => {
@@ -90,30 +90,54 @@ function toggleButton(btn, inicial=false) {
   const btnVoltar = document.getElementById("voltar");
   const btnDownloads = document.getElementById("downloads");
 
-  if (!inicial && btn.textContent.includes("Stop")) {
-    // Voltando ao estado inicial
-    btn.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
+  // cria span para o texto se ainda não existir
+  let textSpan = btn.querySelector(".btn-text");
+  if (!textSpan) {
+    textSpan = document.createElement("span");
+    textSpan.className = "btn-text";
+    textSpan.textContent = btn.textContent;
+    btn.textContent = "";
+    btn.appendChild(textSpan);
+  }
+
+  // cria spinner se ainda não existir
+  let spinner = btn.querySelector(".spinner-border");
+  if (!spinner) {
+    spinner = document.createElement("span");
+    spinner.className = "spinner-border spinner-border-sm ms-2";
+    spinner.role = "status";
+    spinner.style.display = "none";
+    btn.appendChild(spinner);
+  }
+
+  if (!inicial && textSpan.textContent === "Stop") {
+    // voltar ao estado inicial
+    textSpan.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
     otherBtn.style.display = "block";
     uploadInput.style.display = "block";
     mensagemUpload.style.display = "block";
     if (conteudoArquivo) uploadRemoveBtn.style.display = "block";
     if (btnVoltar) btnVoltar.style.display = "none";
     if (btnDownloads) btnDownloads.style.display = "none";
+    spinner.style.display = "none";
 
     chrome.storage.local.set({executando: false, botaoAtivo: null});
   } else {
-    // Iniciando execução
-    btn.textContent = "Stop";
+    // iniciar execução
+    textSpan.textContent = "Stop";
     otherBtn.style.display = "none";
     uploadInput.style.display = "none";
     uploadRemoveBtn.style.display = "none";
     mensagemUpload.style.display = "none";
     if (btnVoltar) btnVoltar.style.display = "none";
     if (btnDownloads) btnDownloads.style.display = "none";
+    spinner.style.display = "inline-block";
 
     chrome.storage.local.set({executando: true, botaoAtivo: btn.id});
   }
 }
+
+
 
 // Função genérica para lidar com clique de botões
 async function handleClick(btn, func, args=[]) {
