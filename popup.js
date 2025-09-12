@@ -110,6 +110,20 @@ function toggleButton(btn, inicial=false) {
     btn.appendChild(spinner);
   }
 
+  // cria aviso fixo, mas escondido por padrão
+  let aviso = document.getElementById("avisoStop");
+  if (!aviso) {
+    aviso = document.createElement("div");
+    aviso.id = "avisoStop";
+    aviso.textContent = "Não minimize e não troque de aba pois pode comprometer o funcionamento.";
+    aviso.style.color = "red";
+    aviso.style.fontWeight = "bold";
+    aviso.style.marginBottom = "10px";
+    aviso.style.textAlign = "center";
+    aviso.style.display = "none"; // inicialmente oculto
+    btn.parentNode.insertBefore(aviso, btn);
+  }
+
   if (!inicial && textSpan.textContent === "Stop") {
     // voltar ao estado inicial
     textSpan.textContent = btn.id === "remover" ? "Remover grupos" : "Salvar grupos";
@@ -120,6 +134,8 @@ function toggleButton(btn, inicial=false) {
     if (btnVoltar) btnVoltar.style.display = "none";
     if (btnDownloads) btnDownloads.style.display = "none";
     spinner.style.display = "none";
+
+    aviso.style.display = "none"; // esconde o aviso junto com o botão
 
     chrome.storage.local.set({executando: false, botaoAtivo: null});
   } else {
@@ -132,6 +148,8 @@ function toggleButton(btn, inicial=false) {
     if (btnVoltar) btnVoltar.style.display = "none";
     if (btnDownloads) btnDownloads.style.display = "none";
     spinner.style.display = "inline-block";
+
+    aviso.style.display = "block"; // mostra o aviso junto com o botão Stop
 
     chrome.storage.local.set({executando: true, botaoAtivo: btn.id});
   }
@@ -194,6 +212,7 @@ function resetLayout() {
   const mensagemUpload = document.getElementById("mensagemUpload");
   const voltarBtn = document.getElementById("voltar");
   const downloadsBtn = document.getElementById("downloads");
+  const aviso = document.getElementById("avisoStop"); // <<< pega o aviso
 
   salvarBtn.style.display = "block";
   removerBtn.style.display = "block";
@@ -207,8 +226,11 @@ function resetLayout() {
   salvarBtn.textContent = "Salvar grupos";
   removerBtn.textContent = "Remover grupos";
 
+  if (aviso) aviso.style.display = "none"; // <<< esconde aqui também
+
   chrome.storage.local.set({executando: false, botaoAtivo: null});
 }
+
 
 function mostrarMensagemFinal() {
   const salvarBtn = document.getElementById("salvar");
@@ -218,6 +240,7 @@ function mostrarMensagemFinal() {
   const mensagemUpload = document.getElementById("mensagemUpload");
   const voltarBtn = document.getElementById("voltar");
   const downloadsBtn = document.getElementById("downloads");
+  const aviso = document.getElementById("avisoStop"); // <<< pega o aviso
 
   salvarBtn.style.display = "none";
   removerBtn.style.display = "none";
@@ -227,7 +250,10 @@ function mostrarMensagemFinal() {
   mensagemUpload.style.display = "block";
   voltarBtn.style.display = "block";
   downloadsBtn.style.display = "block";
+
+  if (aviso) aviso.style.display = "none"; // <<< esconde o aviso ao finalizar
 }
+
 
 // ---------- SCRIPT DE REMOVER ----------
 function startRemover(listaTexto) {
@@ -314,7 +340,7 @@ function extrairDadosLista() {
   function processarItem() {
     if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const lista = document.querySelectorAll("[role='listitem']");
-    if (i >= 5) return downloadTxtFile(resultado);
+    if (i >= lista.length) return downloadTxtFile(resultado);
 
     const link = lista[i].querySelector("a")?.href || "";
     const titulo = lista[i].querySelectorAll("a")[1]?.textContent?.trim() || "";
