@@ -3,12 +3,34 @@ let conteudoArquivo = "";
 // Recupera estado do popup (se algum script está rodando)
 chrome.storage.local.get(["executando", "botaoAtivo"], (data) => {
   const btnId = data.botaoAtivo || null;
-  if (data.executando && btnId) {
-    const btn = document.getElementById(btnId);
-    if (btn) toggleButton(btn, true);
-  } else {
+
+  // Se não houver execução ativa, sempre reseta o layout
+  if (!data.executando || !btnId) {
     resetLayout();
+    return;
   }
+
+  // Verifica se o script ainda está rodando na aba ativa
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tabId = tabs[0]?.id;
+    if (!tabId) {
+      resetLayout();
+      return;
+    }
+
+    chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => window.stopExecution === false // true somente se o script ainda estiver ativo
+    }, (results) => {
+      const stillRunning = results && results[0] && results[0].result;
+      if (stillRunning) {
+        const btn = document.getElementById(btnId);
+        if (btn) toggleButton(btn, true);
+      } else {
+        resetLayout(); // se não estiver rodando, reseta tudo
+      }
+    });
+  });
 });
 
 // Listener para receber mensagens do script injetado na aba
@@ -59,7 +81,6 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     document.body.appendChild(avisoContainer);
   }
 });
-
 
 // Upload de arquivo
 const input = document.getElementById("arquivo");
@@ -230,7 +251,6 @@ function resetLayout() {
   chrome.storage.local.set({executando: false, botaoAtivo: null});
 }
 
-
 function mostrarMensagemFinal() {
   const salvarBtn = document.getElementById("salvar");
   const removerBtn = document.getElementById("remover");
@@ -252,7 +272,6 @@ function mostrarMensagemFinal() {
 
   if (aviso) aviso.style.display = "none"; // <<< esconde o aviso ao finalizar
 }
-
 
 // ---------- SCRIPT DE REMOVER ----------
 function startRemover(listaTexto) {
@@ -317,38 +336,38 @@ function startRemover(listaTexto) {
     } else setTimeout(clickLeaveGroup, 1000);
   }
 
-let tentativas = 0;
-const maxTentativas = 3;
+  let tentativas = 0;
+  const maxTentativas = 3;
 
-function checkLeaveGroup() {
-  if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
+  function checkLeaveGroup() {
+    if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
 
-  const dialog = document.querySelectorAll("[role='dialog']");
+    const dialog = document.querySelectorAll("[role='dialog']");
 
-  if (dialog.length > 1) {
-    console.log("Modal encontrado, tentando clicar...");
-    setTimeout(clickReportLeave, 1500);
-  } else {
-    tentativas++;
-    if (tentativas < maxTentativas) {
-      console.log(`Tentativa ${tentativas}: modal não encontrado, tentando novamente...`);
-      setTimeout(checkLeaveGroup, 1500);
+    if (dialog.length > 1) {
+      console.log("Modal encontrado, tentando clicar...");
+      setTimeout(clickReportLeave, 1500);
     } else {
-      console.log("Modal não apareceu, seguindo o fluxo...");
-      tentativas = 0; // reseta para próxima vez
-      i++
-      linksPermitidos()
+      tentativas++;
+      if (tentativas < maxTentativas) {
+        console.log(`Tentativa ${tentativas}: modal não encontrado, tentando novamente...`);
+        setTimeout(checkLeaveGroup, 1500);
+      } else {
+        console.log("Modal não apareceu, seguindo o fluxo...");
+        tentativas = 0; // reseta para próxima vez
+        i++;
+        linksPermitidos();
+      }
     }
   }
-}
 
   function clickReportLeave() {
     if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
-    console.log("inicio para remover report")
+    console.log("inicio para remover report");
     const dialogs = document.querySelectorAll("[role='dialog']");
     const btn = dialogs[1].querySelector("[role='button']");
-      if (btn) { btn.click(); i++; setTimeout(linksPermitidos, 1500); console.log("Clicado no dialogs")}
-      else setTimeout(clickReportLeave, 1000);
+    if (btn) { btn.click(); i++; setTimeout(linksPermitidos, 1500); console.log("Clicado no dialogs"); }
+    else setTimeout(clickReportLeave, 1000);
   }
 
   linksPermitidos();
