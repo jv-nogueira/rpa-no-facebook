@@ -30,6 +30,9 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     document.getElementById("arquivo").style.display = "none";
     document.getElementById("removerArquivo").style.display = "none";
     document.getElementById("mensagemUpload").style.display = "none";
+    // >>> força esconder o aviso de execução, caso exista
+    const avisoStop = document.getElementById("avisoStop");
+    if (avisoStop) avisoStop.style.display = "none";
 
     // Cria container para mensagem e botão
     let avisoContainer = document.createElement("div");
@@ -110,19 +113,7 @@ function toggleButton(btn, inicial=false) {
     btn.appendChild(spinner);
   }
 
-  // cria aviso fixo, mas escondido por padrão
   let aviso = document.getElementById("avisoStop");
-  if (!aviso) {
-    aviso = document.createElement("div");
-    aviso.id = "avisoStop";
-    aviso.textContent = "Não minimize e não troque de aba pois pode comprometer o funcionamento.";
-    aviso.style.color = "red";
-    aviso.style.fontWeight = "bold";
-    aviso.style.marginBottom = "10px";
-    aviso.style.textAlign = "center";
-    aviso.style.display = "none"; // inicialmente oculto
-    btn.parentNode.insertBefore(aviso, btn);
-  }
 
   if (!inicial && textSpan.textContent === "Stop") {
     // voltar ao estado inicial
@@ -135,7 +126,7 @@ function toggleButton(btn, inicial=false) {
     if (btnDownloads) btnDownloads.style.display = "none";
     spinner.style.display = "none";
 
-    aviso.style.display = "none"; // esconde o aviso junto com o botão
+    if (aviso) aviso.style.display = "none"; // esconde o aviso
 
     chrome.storage.local.set({executando: false, botaoAtivo: null});
   } else {
@@ -149,13 +140,21 @@ function toggleButton(btn, inicial=false) {
     if (btnDownloads) btnDownloads.style.display = "none";
     spinner.style.display = "inline-block";
 
-    aviso.style.display = "block"; // mostra o aviso junto com o botão Stop
+    if (!aviso) {
+      aviso = document.createElement("div");
+      aviso.id = "avisoStop";
+      aviso.textContent = "Não minimize e não troque de aba pois pode comprometer o funcionamento.";
+      aviso.style.color = "red";
+      aviso.style.fontWeight = "bold";
+      aviso.style.marginBottom = "10px";
+      aviso.style.textAlign = "center";
+      btn.parentNode.insertBefore(aviso, btn);
+    }
+    aviso.style.display = "block";
 
     chrome.storage.local.set({executando: true, botaoAtivo: btn.id});
   }
 }
-
-
 
 // Função genérica para lidar com clique de botões
 async function handleClick(btn, func, args=[]) {
@@ -272,12 +271,12 @@ function startRemover(listaTexto) {
     grupo.scrollIntoView();
 
     if (permitidos.size === 0 || !permitidos.has(link)) {
-      setTimeout(() => openOptions(i), 2500);
+      setTimeout(() => openOptions(i), 1000);
       console.log("Removendo grupo:", title, link);
     } else {
       console.log("Permitido:", title, link);
       i++;
-      setTimeout(linksPermitidos, 2500);
+      setTimeout(linksPermitidos, 1000);
     }
   }
 
@@ -312,7 +311,7 @@ function startRemover(listaTexto) {
     if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const dialog = document.querySelector("[role='dialog']");
     if (dialog) {
-           const btn = dialog.querySelectorAll("[role='button']")[2];
+      const btn = dialog.querySelectorAll("[role='button']")[2];
       if (btn) { btn.click(); setTimeout(clickReportLeave, 1500); }
       else setTimeout(clickLeaveGroup, 1000);
     } else setTimeout(clickLeaveGroup, 1000);
