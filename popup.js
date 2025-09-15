@@ -310,21 +310,45 @@ function startRemover(listaTexto) {
   function clickLeaveGroup() {
     if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
     const dialog = document.querySelector("[role='dialog']");
-    if (dialog) {
+    if (dialog) {                   
       const btn = dialog.querySelectorAll("[role='button']")[2];
-      if (btn) { btn.click(); setTimeout(clickReportLeave, 1500); }
+      if (btn) { btn.click(); setTimeout(checkLeaveGroup, 1500); }
       else setTimeout(clickLeaveGroup, 1000);
     } else setTimeout(clickLeaveGroup, 1000);
   }
 
+let tentativas = 0;
+const maxTentativas = 3;
+
+function checkLeaveGroup() {
+  if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
+
+  const dialog = document.querySelectorAll("[role='dialog']");
+
+  if (dialog.length > 1) {
+    console.log("Modal encontrado, tentando clicar...");
+    setTimeout(clickReportLeave, 1500);
+  } else {
+    tentativas++;
+    if (tentativas < maxTentativas) {
+      console.log(`Tentativa ${tentativas}: modal não encontrado, tentando novamente...`);
+      setTimeout(checkLeaveGroup, 1500);
+    } else {
+      console.log("Modal não apareceu, seguindo o fluxo...");
+      tentativas = 0; // reseta para próxima vez
+      i++
+      linksPermitidos()
+    }
+  }
+}
+
   function clickReportLeave() {
     if (window.stopExecution) return console.log("Execução interrompida pelo usuário");
+    console.log("inicio para remover report")
     const dialogs = document.querySelectorAll("[role='dialog']");
-    if (dialogs.length > 1) {
-      const btn = dialogs[1].querySelector("[role='button']");
-      if (btn) { btn.click(); i++; setTimeout(linksPermitidos, 1500); }
+    const btn = dialogs[1].querySelector("[role='button']");
+      if (btn) { btn.click(); i++; setTimeout(linksPermitidos, 1500); console.log("Clicado no dialogs")}
       else setTimeout(clickReportLeave, 1000);
-    } else { i++; setTimeout(linksPermitidos, 1000); }
   }
 
   linksPermitidos();
