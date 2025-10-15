@@ -1,10 +1,15 @@
 {
-  "name": "Extrator da lista de amigos do Facebook",
-  "description": "",
+  "name": "Extrator da Lista de Amigos do Facebook",
+  "description": "Salva a lista de amigos do Facebook em um arquivo .txt.",
   "manifest_version": 3,
   "version": "1.0",
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "permissions": ["activeTab", "scripting"]
 }
