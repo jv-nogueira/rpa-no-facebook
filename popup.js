@@ -1,90 +1,151 @@
-document.getElementById("executar").addEventListener("click", async () => {
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+// Botão Extrair Amigos
+document.getElementById("extrair").addEventListener("click", async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   window.close();
 
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    function: extrairDados
+    func: () => {
+      const dadosExtraidos = [];
+      let i = 0;
+
+      function nextProfile() {
+        const profileReference = document.querySelectorAll("[data-pagelet='ProfileAppSection_0']")[0]
+          .children[0].children[0].children[0].children[0].children[2].children;
+
+        const totalPerfis = profileReference.length;
+
+        if (totalPerfis === 0) {
+          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+          setTimeout(nextProfile, 4000);
+          return;
+        }
+
+        console.log(profileReference.length + " indice " + i)
+
+        if (i < totalPerfis) {
+          profileReference[i].scrollIntoView({ behavior: "smooth" });
+
+          try {
+            const referenceProfileURL = profileReference[i].querySelectorAll("a")[1];
+            if (referenceProfileURL && referenceProfileURL.href) {
+              const getName = referenceProfileURL.children[0].innerText;
+              const profileURL = referenceProfileURL.href;
+              const getImage = profileReference[i].querySelector("img").src;
+              dadosExtraidos.push({ imagem: `=image("${getImage}")`, nome: getName, url: profileURL });
+            } else {
+              const getNameClosed = profileReference[i].children[1].children[0].children[0].innerText;
+              const getImageClosed = profileReference[i].querySelector("img").src;
+              dadosExtraidos.push({ imagem: `=image("${getImageClosed}")`, nome: getNameClosed, url: "Perfil desativado" });
+            }
+          } catch (err) {
+            console.error(`Erro ao processar item ${i}:`, err);
+          }
+
+          i++;
+          setTimeout(nextProfile, i <= totalPerfis - 5 ? 50 : 1000);
+        } else {
+          // salvar arquivo
+          const txtContent = "\uFEFFImagem\tNome\tURL\n" +
+            dadosExtraidos.map(item => `${item.imagem}\t${item.nome}\t${item.url}`).join("\n");
+          const blob = new Blob([txtContent], { type: "text/plain" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "lista-de-perfis-salvos.txt";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        }
+      }
+
+      nextProfile();
+    }
   });
 });
 
-function extrairDados() {
-  const dadosExtraidos = [];
-  let i = 0;
+// Botão Remover Amigos
+document.getElementById("remover").addEventListener("click", async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const fileInput = document.getElementById("arquivoPermitidos");
+  let permitidosURL = [];
 
-  nextProfile(); // inicia o loop
+  // Se não houver arquivo, perguntar ao usuário
+  if (!fileInput.files[0]) {
+    const confirmarTodos = confirm("Nenhum arquivo selecionado. Deseja remover todos os amigos sem exceção?");
+    if (!confirmarTodos) return; // Se cancelar, não faz nada
+  } else {
+    const fileText = await fileInput.files[0].text();
+    permitidosURL = fileText.split("\n").map(l => l.trim());
+  }
+  window.close();
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: (permitidosURL) => {
 
-  function nextProfile() {
-    // Seleciona todos os perfis
-    const profileReference = document.querySelectorAll("[data-pagelet='ProfileAppSection_0']")[0]
-      .children[0].children[0].children[0].children[0].children[2].children;
+      const dadosExtraidos = [];
+      let i = 0;
 
-    const totalPerfis = profileReference.length;
+      function percorrer() {
+        const profileReference = document.querySelectorAll('[data-pagelet="ProfileAppSection_0"]')[0]
+          .children[0].children[0].children[0].children[0].children[2].children;
 
-    if (totalPerfis === 0) {
-      // Caso a lista ainda não tenha carregado nada
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      console.log("Lista vazia. Tentando carregar...");
-      setTimeout(nextProfile, 4000);
-      return;
-    }
+        if(i >= profileReference.length){
+          // salvar arquivo
+          const txtContent = "\uFEFFImagem\tNome\tURL\n" +
+            dadosExtraidos.map(item => `${item.imagem}\t${item.nome}\t${item.url}`).join("\n");
+          const blob = new Blob([txtContent], { type: "text/plain" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "lista-de-unfriend.txt";
+          link.click();
+          URL.revokeObjectURL(link.href);
+          return;
+        }
 
-    if (i < totalPerfis) {
-      console.log("Processando índice:", i);
+        const profile = profileReference[i];
+        profile.scrollIntoView({ behavior: "smooth" });
 
-      // Faz o scroll até o item atual (simula ação humana)
-      profileReference[i].scrollIntoView({ behavior: "smooth" });
-
-      try {
-        // Tenta pegar o link do perfil
-        const referenceProfileURL = profileReference[i].querySelectorAll("a")[1];
+        const referenceProfileURL = profile.querySelectorAll("a")[1];
+        let getName = "", profileURL = "", getImage = "";
 
         if (referenceProfileURL && referenceProfileURL.href) {
-          // Perfil ativo
-          const getName = referenceProfileURL.children[0].innerText;
-          const profileURL = referenceProfileURL.href;
-          const getImage = profileReference[i].querySelector("img").src
-          dadosExtraidos.push({ imagem: '=image("'+getImage+'")', nome: getName, url: profileURL });
+          getName = referenceProfileURL.children[0].innerText;
+          profileURL = referenceProfileURL.href;
+          getImage = profile.querySelector("img")?.src || "";
         } else {
-          // Perfil desativado (sem href)
-          const getNameClosed = profileReference[i].children[1].children[0].children[0].innerText;
-          const getImageClosed = profileReference[i].querySelector("img").src
-          dadosExtraidos.push({ imagem: '=image("'+getImageClosed+'")', nome: getNameClosed, url: "Perfil desativado" });
+          getName = profile.children[1]?.children[0]?.children[0]?.innerText || "Perfil desativado";
+          profileURL = "Perfil desativado";
+          getImage = profile.querySelector("img")?.src || "";
         }
-      } catch (err) {
-        console.error(`Erro ao processar item ${i}:`, err);
+
+        dadosExtraidos.push({ imagem: `=image("${getImage}")`, nome: getName, url: profileURL });
+
+        // Se não houver arquivo, remove todos
+        if (!permitidosURL.length || !permitidosURL.includes(profileURL)) {
+          const buttonUnfriend = profile.children[2]?.children[0]?.children[0]?.children[0];
+          buttonUnfriend?.click();
+
+          setTimeout(() => {
+            const removeFriend = [...document.querySelectorAll("[role='menuitem']")]
+              .find(el => el.textContent === 'Remover amizade');
+            removeFriend?.click();
+
+            setTimeout(() => {
+              const buttonConfirm = document.querySelectorAll("[aria-label='Cancelar']")[0];
+              buttonConfirm?.click();
+              i++;
+              setTimeout(percorrer, 2000);
+            }, 2000);
+          }, 2000);
+        } else {
+          i++;
+          setTimeout(percorrer, 500);
+        }
       }
 
-      i++;
-
-      // Se ainda não chegou no final, usa timer menor
-      if (i <= totalPerfis - 5) {
-        setTimeout(nextProfile, 50); // intervalo curto
-      } else {
-        // Quando chega perto do fim, dá um tempo maior para a página carregar mais perfis
-        console.log("Aguardando carregamento de mais perfis...");
-        setTimeout(nextProfile, 1000);
-      }
-
-    } else {
-      console.log("Fim da lista atual.");
-      salvarComoTxt(dadosExtraidos);
-    }
-  }
-
-  function salvarComoTxt(dados) {
-    // Cria conteúdo do arquivo
-    const txtContent = "\uFEFFImagem\tNome\tURL\n" + dados.map(item => `${item.imagem}\t${item.nome}\t${item.url}`).join("\n");
-
-    // Cria o Blob e o link de download
-    const blob = new Blob([txtContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "lista-de-perfis-salvos.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-}
+      percorrer();
+    },
+    args: [permitidosURL]
+  });
+});

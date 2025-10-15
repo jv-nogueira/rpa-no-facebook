@@ -2,18 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Extrator Facebook</title>
+  <title>Gestor de Amigos do Facebook</title>
   <style>
     body {
-      width: 260px;
-      font-family: Arial, sans-serif;
+      width: 280px;
       text-align: center;
+      font-family: Arial, sans-serif;
       padding: 15px;
     }
-    h1 {
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
+
+    h1 { font-size: 16px; margin-bottom: 10px; }
+
     button {
       background-color: #1877f2;
       color: white;
@@ -22,21 +21,33 @@
       font-size: 14px;
       border-radius: 5px;
       cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
     }
-    button:hover {
-      background-color: #145dbf;
-    }
-    p {
+
+    button:hover { background-color: #145dbf; }
+
+    input[type="file"] {
+      display: block;
+      margin: 10px auto;
       font-size: 13px;
-      color: #555;
-      margin-top: 10px;
     }
+
+    p { font-size: 12px; color: #555; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Extrator Facebook</h1>
-  <button id="executar">Extrair Amigos</button>
-  <p>Execute na página de amigos do seu perfil.</p>
+  <h1>Gestor de Amigos</h1>
+
+  <button id="extrair">Extrair Amigos</button>
+
+  <hr style="margin: 15px 0;">
+
+  <input type="file" id="arquivoPermitidos" accept=".txt">
+  <button id="remover">Remover Amigos</button>
+
+  <p>Use na página de amigos do Facebook.</p>
+
   <script src="popup.js"></script>
 </body>
 </html>
