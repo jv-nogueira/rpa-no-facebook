@@ -1,73 +1,96 @@
 // Botão Extrair Amigos
 document.getElementById("extrair").addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const fileInput = document.getElementById("permitidosExtrair");
+  let permitidosURL = [];
+
+  // Se não houver arquivo, perguntar ao usuário
+  if (!fileInput.files[0]) {
+    const confirmarTodos = confirm("Nenhum arquivo selecionado. Deseja extrair todos os amigos sem exceção?");
+    if (!confirmarTodos) return;
+  } else {
+    const fileText = await fileInput.files[0].text();
+    permitidosURL = fileText
+      .split("\n")
+      .map(l => l.trim());
+  }
+
   window.close();
 
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: () => {
+    func: (permitidosURL) => {
+
       const dadosExtraidos = [];
       let i = 0;
 
-      function nextProfile() {
-        const profileReference = document.querySelectorAll("[data-pagelet='ProfileAppSection_0']")[0]
+      function percorrer() {
+        const profileReference = document.querySelectorAll('[data-pagelet="ProfileAppSection_0"]')[0]
           .children[0].children[0].children[0].children[0].children[2].children;
 
-        const totalPerfis = profileReference.length;
-
-        if (totalPerfis === 0) {
-          window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-          setTimeout(nextProfile, 4000);
-          return;
-        }
-
-        console.log(profileReference.length + " indice " + i)
-
-        if (i < totalPerfis) {
-          profileReference[i].scrollIntoView({ behavior: "smooth" });
-
-          try {
-            const referenceProfileURL = profileReference[i].querySelectorAll("a")[1];
-            if (referenceProfileURL && referenceProfileURL.href) {
-              const getName = referenceProfileURL.children[0].innerText;
-              const profileURL = referenceProfileURL.href;
-              const getImage = profileReference[i].querySelector("img").src;
-              dadosExtraidos.push({ imagem: `=image("${getImage}")`, nome: getName, url: profileURL });
-            } else {
-              const getNameClosed = profileReference[i].children[1].children[0].children[0].innerText;
-              const getImageClosed = profileReference[i].querySelector("img").src;
-              dadosExtraidos.push({ imagem: `=image("${getImageClosed}")`, nome: getNameClosed, url: "Perfil desativado" });
-            }
-          } catch (err) {
-            console.error(`Erro ao processar item ${i}:`, err);
-          }
-
-          i++;
-          setTimeout(nextProfile, i <= totalPerfis - 5 ? 50 : 1000);
-        } else {
-          // salvar arquivo
+        if (i >= profileReference.length) {
           const txtContent = "\uFEFFImagem\tNome\tURL\n" +
-            dadosExtraidos.map(item => `${item.imagem}\t${item.nome}\t${item.url}`).join("\n");
+            dadosExtraidos.map(item =>
+              `${item.imagem}\t${item.nome}\t${item.url}`
+            ).join("\n");
+
           const blob = new Blob([txtContent], { type: "text/plain" });
           const link = document.createElement("a");
           link.href = URL.createObjectURL(blob);
           link.download = "lista-de-perfis-salvos.txt";
-          document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
           URL.revokeObjectURL(link.href);
+          return;
+        }
+
+        const profile = profileReference[i];
+        profile.scrollIntoView({ behavior: "smooth" });
+
+        const referenceProfileURL = profile.querySelectorAll("a")[1];
+
+        let getName = "", profileURL = "", getImage = "";
+
+        if (referenceProfileURL && referenceProfileURL.href) {
+          getName = referenceProfileURL.children[0].innerText;
+          profileURL = referenceProfileURL.href;
+          getImage = profile.querySelector("img")?.src || "";
+        } else {
+          getName = profile.children[1]?.children[0]?.children[0]?.innerText || "Perfil desativado";
+          profileURL = "Perfil desativado";
+          getImage = profile.querySelector("img")?.src || "";
+        }
+
+        // ✅ REGRA ESPELHADA DO REMOVER (invertida)
+        // remover: !permitidos || !includes
+        // extrair: !permitidos || includes
+        if (!permitidosURL.length || !permitidosURL.includes(profileURL)) {
+          dadosExtraidos.push({
+            imagem: `=image("${getImage}")`,
+            nome: getName,
+            url: profileURL
+          });
+
+          i++;
+          setTimeout(percorrer, 100);
+
+        } else {
+          i++;
+          setTimeout(percorrer, 100);
         }
       }
 
-      nextProfile();
-    }
+      percorrer();
+    },
+    args: [permitidosURL]
   });
 });
+
+
 
 // Botão Remover Amigos
 document.getElementById("remover").addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const fileInput = document.getElementById("arquivoPermitidos");
+  const fileInput = document.getElementById("permitidosRemover");
   let permitidosURL = [];
 
   // Se não houver arquivo, perguntar ao usuário
@@ -76,9 +99,12 @@ document.getElementById("remover").addEventListener("click", async () => {
     if (!confirmarTodos) return; // Se cancelar, não faz nada
   } else {
     const fileText = await fileInput.files[0].text();
-    permitidosURL = fileText.split("\n").map(l => l.trim());
+    permitidosURL = fileText
+    .split("\n")
+    .map(l => l.trim());
   }
   window.close();
+
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: (permitidosURL) => {
