@@ -60,9 +60,6 @@ document.getElementById("extrair").addEventListener("click", async () => {
           getImage = profile.querySelector("img")?.src || "";
         }
 
-        // ✅ REGRA ESPELHADA DO REMOVER (invertida)
-        // remover: !permitidos || !includes
-        // extrair: !permitidos || includes
         if (!permitidosURL.length || !permitidosURL.includes(profileURL)) {
           dadosExtraidos.push({
             imagem: `=image("${getImage}")`,
@@ -70,13 +67,23 @@ document.getElementById("extrair").addEventListener("click", async () => {
             url: profileURL
           });
 
-          i++;
-          setTimeout(percorrer, 100);
-
-        } else {
-          i++;
-          setTimeout(percorrer, 100);
-        }
+        } 
+        if (i < profileReference.length - 4) { 
+          i++; 
+          setTimeout(percorrer, 100); 
+        } else if(i < profileReference.length - 1) { 
+          i++; 
+          if (profileReference[i]) {
+            profileReference[i].scrollIntoView(); 
+          };
+            setTimeout(percorrer, 2000); 
+        }else{
+          i++; 
+          if (profileReference[i]) {
+            profileReference[i].scrollIntoView(); 
+          };
+            setTimeout(percorrer, 8000); 
+        };
       }
 
       percorrer();
